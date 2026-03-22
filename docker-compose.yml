@@ -1,0 +1,10 @@
+services:
+  bkhk-mcp-server:
+    build: .
+    image: bkhk-mcp-server
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./podcast_db_local_fr:/app/podcast_db_local_fr:ro
+    env_file:
+      - .env
