@@ -5,6 +5,6 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./podcast_db_local_fr:/app/podcast_db_local_fr:ro
+      - ./podcast_db_local_fr:/app/podcast_db_local_fr
     env_file:
       - .env

@@ -11,6 +11,7 @@ import logging
 from mcp.server.fastmcp import FastMCP
 from pathlib import Path
 from hf_embeddings import get_embedding_function
+import json
 
 # Configure logging to show dice roll results
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -72,21 +73,28 @@ class podcastKnowledgeBase:
             return "KB unavailable"
         
         try:
-            results = collection.query(query_texts=[query], n_results=5)
+            results = collection.query(query_texts=[query], n_results=5, include=["distances", "documents", "metadatas"])
             if results['documents'][0]:
                 response_items = []
+                distances = results.get('distances', [[]])[0]
+                logging.info(f"Distances: {distances}")
                 for i, doc in enumerate(results['documents'][0]):
                     meta = results['metadatas'][0][i] if results['metadatas'] else {}
                     title = meta.get('title', 'Unknown')
                     podcast = meta.get('podcast', 'Unknown')
                     spotify_url = meta.get('spotify_url', '')
+                    distance = distances[i] if i < len(distances) else None
                     response_items.append({
                         'title': title,
                         'podcast': podcast,
                         'spotify_url': spotify_url,
-                        'content': doc.replace("\n", " ")
+                        'content': doc.replace("\n", " "),
+                        'length': len(doc),
+                        'word_count': len(doc.split()),
+                        'similarity_score': distance
                     })
-                print(f"KB query results: {str(response_items)}")
+                
+                logging.info(f"!!!!!!!!!!!!!!!!!! KB query results: {json.dumps(response_items, indent=2, ensure_ascii=False)}")
                 return str(response_items)
             return "No advice found"
         except:
