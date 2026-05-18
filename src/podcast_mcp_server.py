@@ -1,5 +1,4 @@
 
-
 import os
 # 1. Prevent the tokenizer from forking multiple threads (fixes the hang)
 #os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -18,21 +17,15 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class podcastKnowledgeBase:
     """Fast knowledge base interface"""
-    
+
     def __init__(self):
-        # Use the shared KB at the chapter root level
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        # Go up to chapter root: rules_agent -> agents -> 5_a2a_integration
-        chapter_root = os.path.dirname(os.path.dirname(current_dir))
-        #self.db_path = Path(__file__).parent.parent.parent / "podcast_db_local_fr"
-        self.db_path =  "/app/podcast_db_local_fr"
+        self.db_path = os.environ.get("DB_PATH", "/app/podcast_db_local_fr")
         self._client = None
         self._collection = None
-        self.MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
         self.collection_name = "BKHK_podcast"
-        self.local_ef = get_embedding_function()
+        self.local_ef = get_embedding_function(model_name=os.environ.get("HF_MODEL"))
         logging.info(f"KB path: {self.db_path}")
-    
+
     def _get_collection(self, name: str, embedding_function):
         if self._collection is None:
             try:
@@ -56,7 +49,7 @@ class podcastKnowledgeBase:
                 # List available collections
                 collections = self._client.list_collections()
                 logging.info(f"Available collections: {[c.name for c in collections]}")
-                
+
                 self._collection = self._client.get_collection(name=name, embedding_function=embedding_function)
                 logging.info("Collection 'BKHK_podcast' found successfully")
             except Exception as e:
@@ -71,7 +64,7 @@ class podcastKnowledgeBase:
         if not collection:
             logging.info("Collection is None - KB unavailable")
             return "KB unavailable"
-        
+
         try:
             results = collection.query(query_texts=[query], n_results=5, include=["distances", "documents", "metadatas"])
             if results['documents'][0]:
@@ -93,7 +86,7 @@ class podcastKnowledgeBase:
                         'word_count': len(doc.split()),
                         'similarity_score': distance
                     })
-                
+
                 logging.info(f"!!!!!!!!!!!!!!!!!! KB query results: {json.dumps(response_items, indent=2, ensure_ascii=False)}")
                 return str(response_items)
             return "No advice found"
@@ -102,7 +95,7 @@ class podcastKnowledgeBase:
 
 podcast_kb = podcastKnowledgeBase()
 
-mcp = FastMCP(name="BKHK teacher Service", stateless_http=True, host="0.0.0.0", port=8080)
+mcp = FastMCP(name="Podcast MCP Server", stateless_http=True, host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))
 
 
 @mcp.tool()
@@ -112,5 +105,5 @@ def query_podcast_advices(chatInput: str) -> str:
 
 
 if __name__ == "__main__":
-    logging.info("Starting BKHK teacher Server...")
+    logging.info("Starting Podcast MCP Server...")
     mcp.run(transport="streamable-http")

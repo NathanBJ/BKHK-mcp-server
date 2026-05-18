@@ -11,4 +11,4 @@ COPY src/ ./src/
 
 EXPOSE 8080
 
-CMD ["uv", "run", "src/BKHK_podcast_teacher.py"]
+CMD ["uv", "run", "src/podcast_mcp_server.py"]

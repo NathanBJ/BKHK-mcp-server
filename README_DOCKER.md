@@ -1,4 +1,4 @@
-# Minimal Docker image for `BKHK_podcast_teacher.py`
+# Minimal Docker image for `podcast_mcp_server.py`
 
 Build and run (CPU-only):
 
